@@ -25,10 +25,6 @@ export default function Channel() {
 
     
 
-  const startStream = () => {
-    setIsStreaming(true);
-  };
-
   const followChannel = async () => {
     const user = supabase.auth.getUser();
     if (!user) {
@@ -49,6 +45,36 @@ export default function Channel() {
       router.push('/auth');
     }
   };
+
+  const notifyFollowers = async () => {
+    const { data: followers } = await supabase
+      .from('followers')
+      .select('user_id')
+      .eq('channel_id', id);
+    for (let follower of followers) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', follower.user_id)
+        .single();
+      await fetch('/api/sendNotification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: profile.email,
+          message: `${channel.username} has started streaming!`,
+        }),
+      });
+    }
+  };
+  
+  const startStream = () => {
+    setIsStreaming(true);
+    notifyFollowers();
+  };
+  
 
   return (
     <div className="container mx-auto p-4">
