@@ -19,8 +19,8 @@ export default function Home() {
       <ul>
         {channels.map((channel) => (
           <li key={channel.id}>
-            <Link href={`/channel/${channel.id}`}>
-              <a>{channel.username}</a>
+            <Link href={`/channel/${channel.id}`} passHref>
+              {channel.username}
             </Link>
           </li>
         ))}
