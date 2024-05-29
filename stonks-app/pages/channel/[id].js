@@ -7,6 +7,8 @@ export default function Channel() {
   const { id } = router.query;
   const [channel, setChannel] = useState(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     const fetchChannel = async () => {
@@ -14,10 +16,38 @@ export default function Channel() {
       setChannel(data);
     };
     if (id) fetchChannel();
+    const fetchMessages = async () => {
+      const { data } = await supabase.from('messages').select('*').eq('channel_id', id);
+      setMessages(data);
+    };
+    if (id) fetchMessages();
   }, [id]);
+
+    
 
   const startStream = () => {
     setIsStreaming(true);
+  };
+
+  const followChannel = async () => {
+    const user = supabase.auth.getUser();
+    if (!user) {
+      // Redirect or prompt login
+      router.push('/auth');
+      return;
+    }
+    // await supabase.from('followers').insert({ user_id: user.id, channel_id: id });
+    await supabase.from('followers').insert({ user_id: user.id });
+  };
+
+  const sendMessage = async () => {
+    const user = supabase.auth.getUser();
+    if (user) {
+      await supabase.from('messages').insert({ channel_id: id, user_id: user.id, content: message });
+      setMessage('');
+    } else {
+      router.push('/auth');
+    }
   };
 
   return (
@@ -37,6 +67,18 @@ export default function Channel() {
               allowFullScreen
             ></iframe>
           )}
+          <button onClick={followChannel}>Follow</button>
+          <div>
+            {messages.map((msg) => (
+              <p key={msg.id}>{msg.content}</p>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button onClick={sendMessage}>Send</button>
         </>
       ) : (
         <p>Loading...</p>
