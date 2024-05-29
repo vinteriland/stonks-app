@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../utils/supabaseClient';
 
 export default function Profile() {
   const [profile, setProfile] = useState({ username: '', notifications: false });
 
   useEffect(() => {
     const getProfile = async () => {
-      const user = supabase.auth.user();
+      const user = supabase.auth.getUser();
       if (user) {
         const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         if (data) setProfile(data);
@@ -16,8 +16,13 @@ export default function Profile() {
   }, []);
 
   const updateProfile = async () => {
-    const user = supabase.auth.user();
-    await supabase.from('profiles').upsert({ id: user.id, ...profile });
+    const user = supabase.auth.getUser();
+    if (window.confirm('Are you sure you want to update your profile?')) {
+        await supabase.from('profiles').upsert({ id: user.id, ...profile });
+    
+        // Prompt after updating profile
+        window.alert('Profile updated successfully!');
+      }
   };
 
   return (
